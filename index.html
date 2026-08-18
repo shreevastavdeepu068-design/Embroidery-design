@@ -1,1 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
 
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  />
+
+  <meta
+    name="description"
+    content="AI Embroidery Engine — professional embroidery design planning, digitization and machine-ready file generation."
+  />
+
+  <meta name="theme-color" content="#0b0d10" />
+
+  <title>AI Embroidery Engine</title>
+
+  <!-- Main stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Google font -->
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  />
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+</head>
+
+<body>
+
+  <!-- =====================================================
+       APP SHELL
+       ===================================================== -->
+
+  <div class="app-shell">
+
+    <!-- ===================================================
+         SIDEBAR / MOBILE MENU
+         =================================================== -->
+
+    <aside class="sidebar" id="sidebar">
+
+      <div class="brand">
+
+        <div class="brand-mark">
+          🧵
+        </div>
+
+        <div class="brand-text">
+          <strong>Embroidery AI</strong>
+          <span>Design Engine</span>
+        </div>
+
+      </div>
+
+
+      <nav class="main-nav" aria-label="Main navigation">
+
+        <button
+          class="nav-item active"
+          type="button"
+          data-section="studio"
+        >
+          <span class="nav-icon">✦</span>
+          <span>Studio</span>
+        </button>
+
+        <button
+          class="nav-item"
+          type="button"
+          data-section="designs"
+        >
+          <span class="nav-icon">▦</span>
+          <span>My Designs</span>
+        </button>
+
+        <button
+          class="nav-item"
+          type="button"
+          data-section="engine"
+        >
+          <span class="nav-icon">⚙</span>
+          <span>Engine</span>
+        </button>
+
+        <button
+          class="nav-item"
+          type="button"
+          data-section="settings"
+        >
+          <span class="nav-icon">◉</span>
+          <span>Settings</span>
+        </button>
+
+      </nav>
+
+
+      <div class="sidebar-bottom">
+
+        <div class="engine-status">
+
+          <span class="status-dot"></span>
+
+          <div>
+            <strong>Engine Status</strong>
+            <small>Ready</small>
+          </div>
+
+        </div>
+
+        <button
+          class="sidebar-help"
+          type="button"
+        >
+          Help & Documentation
+        </button>
+
+      </div>
+
+    </aside>
+
+
+    <!-- ===================================================
+         MAIN AREA
+         =================================================== -->
+
+    <main class="main-content">
+
+      <!-- TOP BAR -->
+
+      <header class="topbar">
+
+        <button
+          class="menu-button"
+          id="menuButton"
+          type="button"
+          aria-label="Open menu"
+          aria-expanded="false"
+        >
+          ☰
+        </button>
+
+
+        <div class="topbar-title">
+
+          <span>Embroidery Studio</span>
+
+          <small>
+            Professional design & digitization workspace
+          </small>
+
+        </div>
+
+
+        <div class="topbar-actions">
+
+          <button
+            class="icon-button"
+            type="button"
+            title="Notifications"
+            aria-label="Notifications"
+          >
+            ♢
+          </button>
+
+          <button
+            class="profile-button"
+            type="button"
+            aria-label="Account"
+          >
+            DS
+          </button>
+
+        </div>
+
+      </header>
+
+
+      <!-- =================================================
+           STUDIO SECTION
+           ================================================= -->
+
+      <section
+        class="page-section active"
+        id="studioSection"
+      >
+
+        <!-- HERO -->
+
+        <div class="studio-heading">
+
+          <div>
+
+            <span class="eyebrow">
+              AI-POWERED EMBROIDERY WORKFLOW
+            </span>
+
+            <h1>
+              Create your next<br />
+              <span>embroidery design.</span>
+            </h1>
+
+            <p>
+              Define the real production requirements first.
+              The embroidery engine will use them to prepare
+              a machine-oriented design.
+            </p>
+
+          </div>
+
+
+          <div class="engine-badge">
+
+            <span class="status-dot"></span>
+
+            Engine ready
+
+          </div>
+
+        </div>
+
+
+        <!-- WORKSPACE GRID -->
+
+        <div class="workspace-grid">
+
+
+          <!-- =============================================
+               LEFT: DESIGN REQUIREMENTS
+               ============================================= -->
+
+          <section class="panel requirements-panel">
+
+            <div class="panel-header">
+
+              <div>
+
+                <span class="panel-kicker">
+                  STEP 01
+                </span>
+
+                <h2>Design requirements</h2>
+
+                <p>
+                  Enter the physical requirements of the
+                  embroidery job.
+                </p>
+
+              </div>
+
+              <span class="required-label">
+                Required
+              </span>
+
+            </div>
+
+
+            <!-- SIZE -->
+
+            <div class="form-group">
+
+              <label>
+                Design size
+              </label>
+
+              <div class="input-row">
+
+                <div class="input-with-label">
+
+                  <input
+                    id="designWidth"
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value="4"
+                    placeholder="Width"
+                  />
+
+                  <span>W</span>
+
+                </div>
+
+
+                <span class="dimension-symbol">
+                  ×
+                </span>
+
+
+                <div class="input-with-label">
+
+                  <input
+                    id="designHeight"
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value="4"
+                    placeholder="Height"
+                  />
+
+                  <span>H</span>
+
+                </div>
+
+
+                <select
+                  id="sizeUnit"
+                  aria-label="Size unit"
+                >
+
+                  <option value="inch">
+                    inch
+                  </option>
+
+                  <option value="mm">
+                    mm
+                  </option>
+
+                </select>
+
+              </div>
+
+            </div>
+
+
+            <!-- HOOP -->
+
+            <div class="form-group">
+
+              <label for="hoopSize">
+                Hoop size
+              </label>
+
+              <select id="hoopSize">
+
+                <option value="5x7">
+                  5 × 7 inch
+                </option>
+
+                <option value="4x4">
+                  4 × 4 inch
+                </option>
+
+                <option value="6x10">
+                  6 × 10 inch
+                </option>
+
+                <option value="8x12">
+                  8 × 12 inch
+                </option>
+
+                <option value="custom">
+                  Custom
+                </option>
+
+              </select>
+
+              <small class="field-help">
+                Choose the hoop available on the target machine.
+              </small>
+
+            </div>
+
+
+            <!-- FABRIC -->
+
+            <div class="form-group">
+
+              <label for="fabricType">
+                Fabric
+              </label>
+
+              <select id="fabricType">
+
+                <option value="cotton">
+                  Cotton
+                </option>
+
+                <option value="denim">
+                  Denim
+                </option>
+
+                <option value="hosiery">
+                  Hosiery / T-shirt
+                </option>
+
+                <option value="polyester">
+                  Polyester
+                </option>
+
+                <option value="silk">
+                  Silk
+                </option>
+
+                <option value="canvas">
+                  Canvas
+                </option>
+
+                <option value="other">
+                  Other
+                </option>
+
+              </select>
+
+            </div>
+
+
+            <!-- GARMENT -->
+
+            <div class="form-group">
+
+              <label for="garmentType">
+                Product / garment
+              </label>
+
+              <select id="garmentType">
+
+                <option value="kurti">
+                  Kurti
+                </option>
+
+                <option value="shirt">
+                  Shirt
+                </option>
+
+                <option value="tshirt">
+                  T-shirt
+                </option>
+
+                <option value="cap">
+                  Cap
+                </option>
+
+                <option value="jacket">
+                  Jacket
+                </option>
+
+                <option value="patch">
+                  Patch
+                </option>
+
+                <option value="logo">
+                  Logo
+                </option>
+
+                <option value="other">
+                  Other
+                </option>
+
+              </select>
+
+            </div>
+
+
+            <!-- COLORS -->
+
+            <div class="form-group">
+
+              <label for="threadColors">
+                Thread colors
+              </label>
+
+              <select id="threadColors">
+
+                <option value="auto">
+                  AI / Engine select
+                </option>
+
+                <option value="2">
+                  2 colors
+                </option>
+
+                <option value="3">
+                  3 colors
+                </option>
+
+                <option value="4">
+                  4 colors
+                </option>
+
+                <option value="5">
+                  5 colors
+                </option>
+
+                <option value="6">
+                  6 colors
+                </option>
+
+                <option value="8">
+                  8 colors
+                </option>
+
+                <option value="12">
+                  12 colors
+                </option>
+
+              </select>
+
+            </div>
+
+
+            <!-- STITCH PREFERENCE -->
+
+            <div class="form-group">
+
+              <label for="stitchPreference">
+                Stitch preference
+              </label>
+
+              <select id="stitchPreference">
+
+                <option value="auto">
+                  Automatic
+                </option>
+
+                <option value="running">
+                  Running stitch
+                </option>
+
+                <option value="satin">
+                  Satin stitch
+                </option>
+
+                <option value="fill">
+                  Fill stitch
+                </option>
+
+              </select>
+
+            </div>
+
+
+            <!-- DESCRIPTION -->
+
+            <div class="form-group">
+
+              <label for="designDescription">
+                Design description
+              </label>
+
+              <textarea
+                id="designDescription"
+                rows="5"
+                placeholder="Example: Elegant floral embroidery for a cotton kurti, medium detail, clean professional finish..."
+              ></textarea>
+
+              <small class="field-help">
+                Describe what you actually want to embroider.
+              </small>
+
+            </div>
+
+
+            <!-- REFERENCE -->
+
+            <div class="form-group">
+
+              <label>
+                Reference image
+                <span class="optional-label">
+                  Optional
+                </span>
+              </label>
+
+              <label
+                class="upload-box"
+                for="referenceImage"
+              >
+
+                <input
+                  id="referenceImage"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  hidden
+                />
+
+                <span class="upload-icon">
+                  ↑
+                </span>
+
+                <strong>
+                  Upload reference
+                </strong>
+
+                <small>
+                  PNG, JPG, WEBP or SVG
+                </small>
+
+              </label>
+
+            </div>
+
+
+            <!-- ACTION -->
+
+            <div class="primary-action">
+
+              <button
+                id="generateButton"
+                class="primary-button"
+                type="button"
+              >
+
+                <span class="button-icon">
+                  ✦
+                </span>
+
+                Generate embroidery design
+
+              </button>
+
+              <small>
+                Generation will use your production parameters.
+              </small>
+
+            </div>
+
+          </section>
+
+
+          <!-- =============================================
+               RIGHT: PREVIEW
+               ============================================= -->
+
+          <section class="preview-column">
+
+
+            <!-- PREVIEW PANEL -->
+
+            <div class="panel preview-panel">
+
+              <div class="panel-header preview-header">
+
+                <div>
+
+                  <span class="panel-kicker">
+                    STEP 02
+                  </span>
+
+                  <h2>Embroidery preview</h2>
+
+                </div>
+
+
+                <div class="preview-actions">
+
+                  <button
+                    type="button"
+                    class="small-button"
+                    id="fitPreviewButton"
+                  >
+                    Fit
+                  </button>
+
+                  <button
+                    type="button"
+                    class="small-button"
+                    id="resetPreviewButton"
+                  >
+                    Reset
+                  </button>
+
+                </div>
+
+              </div>
+
+
+              <!-- CANVAS -->
+
+              <div
+                class="embroidery-canvas"
+                id="embroideryCanvas"
+              >
+
+                <div class="hoop-preview">
+
+                  <div class="hoop-grid"></div>
+
+                  <div
+                    class="preview-placeholder"
+                    id="previewPlaceholder"
+                  >
+
+                    <div class="placeholder-icon">
+                      🧵
+                    </div>
+
+                    <strong>
+                      Your embroidery will appear here
+                    </strong>
+
+                    <span>
+                      Configure the requirements and
+                      generate a design.
+                    </span>
+
+                  </div>
+
+                  <canvas
+                    id="stitchCanvas"
+                    aria-label="Embroidery stitch preview"
+                  ></canvas>
+
+                </div>
+
+              </div>
+
+
+              <!-- PREVIEW FOOTER -->
+
+              <div class="preview-footer">
+
+                <div class="preview-meta">
+
+                  <span>
+                    Size
+                  </span>
+
+                  <strong id="previewSize">
+                    4 × 4 in
+                  </strong>
+
+                </div>
+
+
+                <div class="preview-meta">
+
+                  <span>
+                    Hoop
+                  </span>
+
+                  <strong id="previewHoop">
+                    5 × 7 in
+                  </strong>
+
+                </div>
+
+
+                <div class="preview-meta">
+
+                  <span>
+                    Status
+                  </span>
+
+                  <strong
+                    class="status-text"
+                    id="previewStatus"
+                  >
+                    Not generated
+                  </strong>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- ===========================================
+                 STITCH ANALYTICS
+                 =========================================== -->
+
+            <div class="panel analytics-panel">
+
+              <div class="panel-header">
+
+                <div>
+
+                  <span class="panel-kicker">
+                    ANALYSIS
+                  </span>
+
+                  <h2>Design statistics</h2>
+
+                </div>
+
+              </div>
+
+
+              <div class="stats-grid">
+
+                <div class="stat-card">
+
+                  <span>
+                    Stitch count
+                  </span>
+
+                  <strong id="stitchCount">
+                    —
+                  </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                  <span>
+                    Colors
+                  </span>
+
+                  <strong id="colorCount">
+                    —
+                  </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                  <span>
+                    Estimated time
+                  </span>
+
+                  <strong id="estimatedTime">
+                    —
+                  </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                  <span>
+                    Jump / trim
+                  </span>
+
+                  <strong id="jumpCount">
+                    —
+                  </strong>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- ===========================================
+                 QUALITY CHECK
+                 =========================================== -->
+
+            <div class="panel quality-panel">
+
+              <div class="panel-header">
+
+                <div>
+
+                  <span class="panel-kicker">
+                    QUALITY CONTROL
+                  </span>
+
+                  <h2>Production checks</h2>
+
+                </div>
+
+                <span
+                  class="quality-badge"
+                  id="qualityBadge"
+                >
+                  Waiting
+                </span>
+
+              </div>
+
+
+              <div class="quality-list">
+
+                <div class="quality-item">
+
+                  <span class="quality-icon">
+                    ○
+                  </span>
+
+                  <div>
+
+                    <strong>
+                      Hoop boundary
+                    </strong>
+
+                    <small>
+                      Waiting for design generation
+                    </small>
+
+                  </div>
+
+                </div>
+
+
+                <div class="quality-item">
+
+                  <span class="quality-icon">
+                    ○
+                  </span>
+
+                  <div>
+
+                    <strong>
+                      Stitch density
+                    </strong>
+
+                    <small>
+                      Will be checked by the engine
+                    </small>
+
+                  </div>
+
+                </div>
+
+
+                <div class="quality-item">
+
+                  <span class="quality-icon">
+                    ○
+                  </span>
+
+                  <div>
+
+                    <strong>
+                      Small details
+                    </strong>
+
+                    <small>
+                      Machine compatibility check
+                    </small>
+
+                  </div>
+
+                </div>
+
+
+                <div class="quality-item">
+
+                  <span class="quality-icon">
+                    ○
+                  </span>
+
+                  <div>
+
+                    <strong>
+                      Stitch sequence
+                    </strong>
+
+                    <small>
+                      Production order validation
+                    </small>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- ===========================================
+                 EXPORT
+                 =========================================== -->
+
+            <div class="panel export-panel">
+
+              <div>
+
+                <span class="panel-kicker">
+                  STEP 03
+                </span>
+
+                <h2>Machine output</h2>
+
+                <p>
+                  After the embroidery engine validates the
+                  design, machine-specific files can be
+                  exported here.
+                </p>
+
+              </div>
+
+
+              <div class="export-buttons">
+
+                <button
+                  class="export-button"
+                  type="button"
+                  data-format="DST"
+                  disabled
+                >
+                  <strong>DST</strong>
+                  <span>Tajima</span>
+                </button>
+
+                <button
+                  class="export-button"
+                  type="button"
+                  data-format="PES"
+                  disabled
+                >
+                  <strong>PES</strong>
+                  <span>Brother</span>
+                </button>
+
+                <button
+                  class="export-button"
+                  type="button"
+                  data-format="JEF"
+                  disabled
+                >
+                  <strong>JEF</strong>
+                  <span>Janome</span>
+                </button>
+
+              </div>
+
+
+              <div class="export-note">
+
+                🔒 Export will become available only after
+                the design passes engine validation.
+
+              </div>
+
+            </div>
+
+          </section>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           MY DESIGNS SECTION
+           ================================================= -->
+
+      <section
+        class="page-section"
+        id="designsSection"
+      >
+
+        <div class="section-heading">
+
+          <span class="eyebrow">
+            LIBRARY
+          </span>
+
+          <h1>
+            My Designs
+          </h1>
+
+          <p>
+            Your generated embroidery projects will appear here.
+          </p>
+
+        </div>
+
+
+        <div class="empty-library">
+
+          <div class="empty-icon">
+            ▦
+          </div>
+
+          <h2>
+            No designs yet
+          </h2>
+
+          <p>
+            Your validated embroidery designs will be saved here.
+          </p>
+
+          <button
+            class="primary-button"
+            type="button"
+            data-go-studio
+          >
+            Create first design
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           ENGINE SECTION
+           ================================================= -->
+
+      <section
+        class="page-section"
+        id="engineSection"
+      >
+
+        <div class="section-heading">
+
+          <span class="eyebrow">
+            CORE SYSTEM
+          </span>
+
+          <h1>
+            Embroidery Engine
+          </h1>
+
+          <p>
+            The engine converts embroidery geometry and
+            production rules into machine stitch data.
+          </p>
+
+        </div>
+
+
+        <div class="engine-cards">
+
+          <article class="info-card">
+
+            <span class="info-number">
+              01
+            </span>
+
+            <h2>
+              Geometry
+            </h2>
+
+            <p>
+              Design shapes are converted into measurable
+              embroidery objects.
+            </p>
+
+          </article>
+
+
+          <article class="info-card">
+
+            <span class="info-number">
+              02
+            </span>
+
+            <h2>
+              Stitch generation
+            </h2>
+
+            <p>
+              Objects are converted into running, satin and
+              fill stitch paths.
+            </p>
+
+          </article>
+
+
+          <article class="info-card">
+
+            <span class="info-number">
+              03
+            </span>
+
+            <h2>
+              Validation
+            </h2>
+
+            <p>
+              The engine checks hoop limits, sequencing,
+              density and machine constraints.
+            </p>
+
+          </article>
+
+
+          <article class="info-card">
+
+            <span class="info-number">
+              04
+            </span>
+
+            <h2>
+              Machine format
+            </h2>
+
+            <p>
+              Validated stitch data can be encoded into
+              supported embroidery file formats.
+            </p>
+
+          </article>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           SETTINGS SECTION
+           ================================================= -->
+
+      <section
+        class="page-section"
+        id="settingsSection"
+      >
+
+        <div class="section-heading">
+
+          <span class="eyebrow">
+            APPLICATION
+          </span>
+
+          <h1>
+            Settings
+          </h1>
+
+          <p>
+            Configure application preferences.
+          </p>
+
+        </div>
+
+
+        <div class="panel settings-panel">
+
+          <div class="setting-row">
+
+            <div>
+
+              <strong>
+                Appearance
+              </strong>
+
+              <small>
+                Choose how the workspace looks.
+              </small>
+
+            </div>
+
+            <select id="themeSetting">
+
+              <option value="dark">
+                Dark
+              </option>
+
+              <option value="light">
+                Light
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="setting-row">
+
+            <div>
+
+              <strong>
+                Default unit
+              </strong>
+
+              <small>
+                Used for new design measurements.
+              </small>
+
+            </div>
+
+            <select id="defaultUnit">
+
+              <option value="inch">
+                Inch
+              </option>
+
+              <option value="mm">
+                Millimeter
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="setting-row">
+
+            <div>
+
+              <strong>
+                Automatic validation
+              </strong>
+
+              <small>
+                Run production checks after generation.
+              </small>
+
+            </div>
+
+            <label class="switch">
+
+              <input
+                id="autoValidation"
+                type="checkbox"
+                checked
+              />
+
+              <span></span>
+
+            </label>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- FOOTER -->
+
+      <footer class="app-footer">
+
+        <span>
+          AI Embroidery Engine
+        </span>
+
+        <span>
+          Production-focused embroidery technology
+        </span>
+
+      </footer>
+
+    </main>
+
+  </div>
+
+
+  <!-- =====================================================
+       JAVASCRIPT
+       ===================================================== -->
+
+  <script src="script.js"></script>
+
+</body>
+  </html>
