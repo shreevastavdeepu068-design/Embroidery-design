@@ -1,6 +1,28 @@
 /* =========================================================
-   AI EMBROIDERY ENGINE
-   Application Controller
+   EMBROIDERY AI
+   APPLICATION CONTROLLER
+   Version 0.2.0
+
+   Flow:
+
+   User Requirements
+        ↓
+   Application State
+        ↓
+   Preflight Validation
+        ↓
+   Stitch Engine
+        ↓
+   Stitch Data
+        ↓
+   Preview + Statistics
+
+   IMPORTANT:
+   This frontend does NOT claim to create
+   production-ready DST files yet.
+
+   Real DST/PES encoder + AI geometry + backend
+   will be connected in later stages.
    ========================================================= */
 
 
@@ -8,25 +30,44 @@
    01. DOM REFERENCES
    ========================================================= */
 
-const sidebar = document.getElementById("sidebar");
-const menuButton = document.getElementById("menuButton");
+const sidebar =
+  document.getElementById("sidebar");
 
-const navItems = document.querySelectorAll(".nav-item");
-const pageSections = document.querySelectorAll(".page-section");
+const menuButton =
+  document.getElementById("menuButton");
 
-const generateButton = document.getElementById("generateButton");
+const navItems =
+  document.querySelectorAll(".nav-item");
 
-const designWidth = document.getElementById("designWidth");
-const designHeight = document.getElementById("designHeight");
+const pageSections =
+  document.querySelectorAll(".page-section");
 
-const sizeUnit = document.getElementById("sizeUnit");
-const hoopSize = document.getElementById("hoopSize");
+const generateButton =
+  document.getElementById("generateButton");
 
-const fabricType = document.getElementById("fabricType");
-const garmentType = document.getElementById("garmentType");
+const designWidth =
+  document.getElementById("designWidth");
 
-const threadColors = document.getElementById("threadColors");
-const stitchPreference = document.getElementById("stitchPreference");
+const designHeight =
+  document.getElementById("designHeight");
+
+const sizeUnit =
+  document.getElementById("sizeUnit");
+
+const hoopSize =
+  document.getElementById("hoopSize");
+
+const fabricType =
+  document.getElementById("fabricType");
+
+const garmentType =
+  document.getElementById("garmentType");
+
+const threadColors =
+  document.getElementById("threadColors");
+
+const stitchPreference =
+  document.getElementById("stitchPreference");
 
 const designDescription =
   document.getElementById("designDescription");
@@ -94,9 +135,29 @@ const appState = {
 
   currentSection: "studio",
 
+  /*
+   Generated design returned by
+   EmbroideryStitchEngine.
+  */
+
+  generatedDesign: null,
+
+  /*
+   Raw stitch data.
+  */
+
+  stitches: [],
+
+  /*
+   Engine statistics.
+  */
+
+  statistics: null,
+
   design: {
 
     width: 4,
+
     height: 4,
 
     unit: "inch",
@@ -139,7 +200,21 @@ const appState = {
 
 
 /* =========================================================
-   03. INITIALIZATION
+   03. ENGINE CHECK
+   ========================================================= */
+
+function isStitchEngineAvailable() {
+
+  return (
+    typeof EmbroideryStitchEngine !==
+    "undefined"
+  );
+
+}
+
+
+/* =========================================================
+   04. INITIALIZATION
    ========================================================= */
 
 function initializeApp() {
@@ -166,85 +241,146 @@ function initializeApp() {
 
   updateCanvasSize();
 
+  runPreflightValidation();
+
+  console.info(
+    "Embroidery AI application initialized."
+  );
+
+
+  if (
+    isStitchEngineAvailable()
+  ) {
+
+    console.info(
+      "Embroidery Stitch Engine detected:",
+      EmbroideryStitchEngine.version
+    );
+
+  } else {
+
+    console.warn(
+      "Embroidery Stitch Engine not detected."
+    );
+
+  }
+
 }
 
 
 /* =========================================================
-   04. MOBILE MENU
+   05. MOBILE MENU
    ========================================================= */
 
 function bindMenu() {
 
-  if (!menuButton || !sidebar) {
+  if (
+    !menuButton ||
+    !sidebar
+  ) {
+
     return;
+
   }
 
-  menuButton.addEventListener("click", () => {
 
-    const isOpen =
-      sidebar.classList.toggle("open");
+  menuButton.addEventListener(
+    "click",
+    () => {
 
-    menuButton.setAttribute(
-      "aria-expanded",
-      String(isOpen)
-    );
-
-  });
-
-
-  document.addEventListener("click", (event) => {
-
-    if (!sidebar.classList.contains("open")) {
-      return;
-    }
-
-    const clickedInsideSidebar =
-      sidebar.contains(event.target);
-
-    const clickedMenu =
-      menuButton.contains(event.target);
-
-    if (!clickedInsideSidebar && !clickedMenu) {
-
-      sidebar.classList.remove("open");
+      const isOpen =
+        sidebar.classList.toggle(
+          "open"
+        );
 
       menuButton.setAttribute(
         "aria-expanded",
-        "false"
+        String(isOpen)
       );
 
     }
+  );
 
-  });
+
+  document.addEventListener(
+    "click",
+    (event) => {
+
+      if (
+        !sidebar.classList.contains(
+          "open"
+        )
+      ) {
+
+        return;
+
+      }
+
+
+      const clickedInsideSidebar =
+        sidebar.contains(
+          event.target
+        );
+
+      const clickedMenu =
+        menuButton.contains(
+          event.target
+        );
+
+
+      if (
+        !clickedInsideSidebar &&
+        !clickedMenu
+      ) {
+
+        closeMobileMenu();
+
+      }
+
+    }
+  );
 
 }
 
 
 /* =========================================================
-   05. NAVIGATION
+   06. NAVIGATION
    ========================================================= */
 
 function bindNavigation() {
 
-  navItems.forEach((item) => {
+  navItems.forEach(
+    (item) => {
 
-    item.addEventListener("click", () => {
+      item.addEventListener(
+        "click",
+        () => {
 
-      const section =
-        item.dataset.section;
+          const section =
+            item.dataset.section;
 
-      showSection(section);
+          showSection(
+            section
+          );
 
-    });
+        }
+      );
 
-  });
+    }
+  );
 
 
   if (goStudioButton) {
 
     goStudioButton.addEventListener(
       "click",
-      () => showSection("studio")
+      () => {
+
+        showSection(
+          "studio"
+        );
+
+      }
     );
 
   }
@@ -252,36 +388,44 @@ function bindNavigation() {
 }
 
 
-function showSection(sectionName) {
+function showSection(
+  sectionName
+) {
 
   appState.currentSection =
     sectionName;
 
 
-  navItems.forEach((item) => {
+  navItems.forEach(
+    (item) => {
 
-    const isActive =
-      item.dataset.section === sectionName;
+      const isActive =
+        item.dataset.section ===
+        sectionName;
 
-    item.classList.toggle(
-      "active",
-      isActive
-    );
+      item.classList.toggle(
+        "active",
+        isActive
+      );
 
-  });
+    }
+  );
 
 
-  pageSections.forEach((section) => {
+  pageSections.forEach(
+    (section) => {
 
-    const expectedId =
-      `${sectionName}Section`;
+      const expectedId =
+        `${sectionName}Section`;
 
-    section.classList.toggle(
-      "active",
-      section.id === expectedId
-    );
+      section.classList.toggle(
+        "active",
+        section.id ===
+        expectedId
+      );
 
-  });
+    }
+  );
 
 
   closeMobileMenu();
@@ -295,7 +439,11 @@ function closeMobileMenu() {
     return;
   }
 
-  sidebar.classList.remove("open");
+
+  sidebar.classList.remove(
+    "open"
+  );
+
 
   if (menuButton) {
 
@@ -310,7 +458,7 @@ function closeMobileMenu() {
 
 
 /* =========================================================
-   06. DESIGN INPUTS
+   07. DESIGN INPUTS
    ========================================================= */
 
 function bindDesignInputs() {
@@ -318,35 +466,47 @@ function bindDesignInputs() {
   const inputs = [
 
     designWidth,
+
     designHeight,
+
     sizeUnit,
+
     hoopSize,
+
     fabricType,
+
     garmentType,
+
     threadColors,
+
     stitchPreference,
+
     designDescription
 
   ];
 
 
-  inputs.forEach((input) => {
+  inputs.forEach(
+    (input) => {
 
-    if (!input) {
-      return;
+      if (!input) {
+        return;
+      }
+
+
+      input.addEventListener(
+        "input",
+        handleDesignInput
+      );
+
+
+      input.addEventListener(
+        "change",
+        handleDesignInput
+      );
+
     }
-
-    input.addEventListener(
-      "input",
-      handleDesignInput
-    );
-
-    input.addEventListener(
-      "change",
-      handleDesignInput
-    );
-
-  });
+  );
 
 }
 
@@ -359,7 +519,10 @@ function handleDesignInput() {
 
   updateCanvasSize();
 
-  if (appState.settings.autoValidation) {
+
+  if (
+    appState.settings.autoValidation
+  ) {
 
     runPreflightValidation();
 
@@ -369,57 +532,112 @@ function handleDesignInput() {
 
 
 /* =========================================================
-   07. STATE UPDATE
+   08. STATE UPDATE
    ========================================================= */
 
 function updateDesignState() {
 
-  appState.design.width =
-    Number(designWidth.value);
+  if (designWidth) {
 
-  appState.design.height =
-    Number(designHeight.value);
+    appState.design.width =
+      Number(
+        designWidth.value
+      );
 
-  appState.design.unit =
-    sizeUnit.value;
+  }
 
-  appState.design.hoop =
-    hoopSize.value;
 
-  appState.design.fabric =
-    fabricType.value;
+  if (designHeight) {
 
-  appState.design.garment =
-    garmentType.value;
+    appState.design.height =
+      Number(
+        designHeight.value
+      );
 
-  appState.design.colors =
-    threadColors.value;
+  }
 
-  appState.design.stitchPreference =
-    stitchPreference.value;
 
-  appState.design.description =
-    designDescription.value.trim();
+  if (sizeUnit) {
+
+    appState.design.unit =
+      sizeUnit.value;
+
+  }
+
+
+  if (hoopSize) {
+
+    appState.design.hoop =
+      hoopSize.value;
+
+  }
+
+
+  if (fabricType) {
+
+    appState.design.fabric =
+      fabricType.value;
+
+  }
+
+
+  if (garmentType) {
+
+    appState.design.garment =
+      garmentType.value;
+
+  }
+
+
+  if (threadColors) {
+
+    appState.design.colors =
+      threadColors.value;
+
+  }
+
+
+  if (stitchPreference) {
+
+    appState.design.stitchPreference =
+      stitchPreference.value;
+
+  }
+
+
+  if (designDescription) {
+
+    appState.design.description =
+      designDescription.value.trim();
+
+  }
 
 }
 
 
 /* =========================================================
-   08. PREVIEW INFORMATION
+   09. PREVIEW INFORMATION
    ========================================================= */
 
 function updatePreviewInformation() {
 
   const width =
-    formatNumber(appState.design.width);
+    formatNumber(
+      appState.design.width
+    );
 
   const height =
-    formatNumber(appState.design.height);
+    formatNumber(
+      appState.design.height
+    );
+
 
   const unit =
-    appState.design.unit === "inch"
+    appState.design.unit ===
+    "inch"
       ? "in"
       : "mm";
+
 
   if (previewSize) {
 
@@ -442,57 +660,80 @@ function updatePreviewInformation() {
 
 
 /* =========================================================
-   09. HOOP INFORMATION
+   10. HOOP DEFINITIONS
    ========================================================= */
 
 const HOOP_LIMITS = {
 
   "4x4": {
+
     width: 4,
+
     height: 4
+
   },
 
   "5x7": {
+
     width: 5,
+
     height: 7
+
   },
 
   "6x10": {
+
     width: 6,
+
     height: 10
+
   },
 
   "8x12": {
+
     width: 8,
+
     height: 12
+
   }
 
 };
 
 
-function formatHoopName(hoop) {
+function formatHoopName(
+  hoop
+) {
 
   const names = {
 
-    "4x4": "4 × 4 in",
+    "4x4":
+      "4 × 4 in",
 
-    "5x7": "5 × 7 in",
+    "5x7":
+      "5 × 7 in",
 
-    "6x10": "6 × 10 in",
+    "6x10":
+      "6 × 10 in",
 
-    "8x12": "8 × 12 in",
+    "8x12":
+      "8 × 12 in",
 
-    "custom": "Custom"
+    "custom":
+      "Custom"
 
   };
 
-  return names[hoop] || hoop;
+
+  return (
+    names[hoop] ||
+    hoop
+  );
 
 }
 
 
 /* =========================================================
-   10. PREFLIGHT VALIDATION
+   11. PREFLIGHT VALIDATION
    ========================================================= */
 
 function runPreflightValidation() {
@@ -509,7 +750,10 @@ function runPreflightValidation() {
     appState.design.height;
 
 
-  if (!Number.isFinite(width) || width <= 0) {
+  if (
+    !Number.isFinite(width) ||
+    width <= 0
+  ) {
 
     valid = false;
 
@@ -520,7 +764,10 @@ function runPreflightValidation() {
   }
 
 
-  if (!Number.isFinite(height) || height <= 0) {
+  if (
+    !Number.isFinite(height) ||
+    height <= 0
+  ) {
 
     valid = false;
 
@@ -531,9 +778,19 @@ function runPreflightValidation() {
   }
 
 
-  if (appState.design.unit === "inch") {
+  /*
+   * Browser-side dimension sanity check.
+   */
 
-    if (width > 30 || height > 30) {
+  if (
+    appState.design.unit ===
+    "inch"
+  ) {
+
+    if (
+      width > 30 ||
+      height > 30
+    ) {
 
       valid = false;
 
@@ -546,29 +803,60 @@ function runPreflightValidation() {
   }
 
 
-  if (appState.design.hoop !== "custom") {
+  /*
+   * Hoop validation.
+   */
+
+  if (
+    appState.design.hoop !==
+    "custom"
+  ) {
 
     const hoop =
       HOOP_LIMITS[
         appState.design.hoop
       ];
 
+
     if (hoop) {
 
+      const safetyMargin =
+        0.25;
+
+
+      const availableWidth =
+        hoop.width -
+        safetyMargin;
+
+
+      const availableHeight =
+        hoop.height -
+        safetyMargin;
+
+
       const fitsDirectly =
-        width <= hoop.width &&
-        height <= hoop.height;
+        width <=
+          availableWidth &&
+        height <=
+          availableHeight;
+
 
       const fitsRotated =
-        width <= hoop.height &&
-        height <= hoop.width;
+        width <=
+          availableHeight &&
+        height <=
+          availableWidth;
 
-      if (!fitsDirectly && !fitsRotated) {
+
+      if (
+        !fitsDirectly &&
+        !fitsRotated
+      ) {
 
         valid = false;
 
         messages.push(
-          "Design size exceeds the selected hoop."
+          "Design size exceeds the selected hoop safe area."
         );
 
       }
@@ -589,13 +877,14 @@ function runPreflightValidation() {
 
   updateValidationUI();
 
+
   return valid;
 
 }
 
 
 /* =========================================================
-   11. VALIDATION UI
+   12. VALIDATION UI
    ========================================================= */
 
 function updateValidationUI() {
@@ -605,13 +894,17 @@ function updateValidationUI() {
   }
 
 
-  if (appState.validation.valid) {
+  if (
+    appState.validation.valid
+  ) {
 
     qualityBadge.textContent =
       "Ready for engine";
 
+
     qualityBadge.style.color =
       "var(--success)";
+
 
     qualityBadge.style.background =
       "rgba(101, 230, 154, 0.08)";
@@ -621,8 +914,10 @@ function updateValidationUI() {
     qualityBadge.textContent =
       "Check requirements";
 
+
     qualityBadge.style.color =
       "var(--warning)";
+
 
     qualityBadge.style.background =
       "rgba(255, 200, 87, 0.08)";
@@ -633,7 +928,7 @@ function updateValidationUI() {
 
 
 /* =========================================================
-   12. GENERATE BUTTON
+   13. GENERATE BUTTON
    ========================================================= */
 
 function bindGenerateButton() {
@@ -650,6 +945,10 @@ function bindGenerateButton() {
 
 }
 
+
+/* =========================================================
+   14. GENERATE DESIGN
+   ========================================================= */
 
 function handleGenerateRequest() {
 
@@ -674,20 +973,190 @@ function handleGenerateRequest() {
 
 
   /*
-   IMPORTANT:
+   * Check whether the real stitch engine
+   * has been loaded before script.js.
+   */
 
-   At this stage we DO NOT pretend to generate
-   a real embroidery file.
+  if (
+    !isStitchEngineAvailable()
+  ) {
 
-   The actual stitch-generation engine will be
-   connected in a later module.
-  */
+    setPreviewStatus(
+      "Stitch engine not loaded"
+    );
+
+
+    console.error(
+      "EmbroideryStitchEngine is unavailable. Check script order."
+    );
+
+
+    return;
+
+  }
 
 
   setPreviewStatus(
-    "Requirements validated"
+    "Generating stitch data..."
   );
 
+
+  if (generateButton) {
+
+    generateButton.disabled =
+      true;
+
+  }
+
+
+  /*
+   * Send current production parameters
+   * to the stitch engine.
+   */
+
+  let result;
+
+
+  try {
+
+    result =
+      EmbroideryStitchEngine.build({
+
+        width:
+          appState.design.width,
+
+        height:
+          appState.design.height,
+
+        unit:
+          appState.design.unit,
+
+        hoop:
+          appState.design.hoop,
+
+        fabric:
+          appState.design.fabric,
+
+        garment:
+          appState.design.garment,
+
+        colors:
+          appState.design.colors,
+
+        description:
+          appState.design.description
+
+      });
+
+  } catch (error) {
+
+    console.error(
+      "Stitch engine error:",
+      error
+    );
+
+
+    setPreviewStatus(
+      "Engine error"
+    );
+
+
+    if (generateButton) {
+
+      generateButton.disabled =
+        false;
+
+    }
+
+
+    return;
+
+  }
+
+
+  /*
+   * Engine validation failed.
+   */
+
+  if (
+    !result ||
+    !result.success
+  ) {
+
+    console.warn(
+      "Engine validation result:",
+      result
+    );
+
+
+    if (
+      result &&
+      result.validation
+    ) {
+
+      displayEngineValidation(
+        result.validation
+      );
+
+    }
+
+
+    setPreviewStatus(
+      "Engine validation failed"
+    );
+
+
+    if (generateButton) {
+
+      generateButton.disabled =
+        false;
+
+    }
+
+
+    return;
+
+  }
+
+
+  /*
+   * Store engine result.
+   */
+
+  appState.generatedDesign =
+    result.design;
+
+
+  appState.stitches =
+    result.stitches || [];
+
+
+  appState.statistics =
+    result.statistics || null;
+
+
+  /*
+   * Update statistics.
+   */
+
+  updateEngineStatistics(
+    result.statistics
+  );
+
+
+  /*
+   * Draw actual generated stitch
+   * geometry on canvas.
+   */
+
+  drawStitchPreview(
+    result.stitches
+  );
+
+
+  /*
+   * Update placeholder.
+   */
 
   if (previewPlaceholder) {
 
@@ -698,12 +1167,12 @@ function handleGenerateRequest() {
       </div>
 
       <strong>
-        Production parameters validated
+        Stitch data generated
       </strong>
 
       <span>
-        Stitch engine is ready to receive
-        these design requirements.
+        Current geometry passed the
+        available engine validation.
       </span>
 
     `;
@@ -711,26 +1180,516 @@ function handleGenerateRequest() {
   }
 
 
-  updateStatisticsPlaceholder();
+  /*
+   * Update quality badge.
+   */
+
+  if (qualityBadge) {
+
+    qualityBadge.textContent =
+      "Engine ready";
+
+
+    qualityBadge.style.color =
+      "var(--success)";
+
+
+    qualityBadge.style.background =
+      "rgba(101, 230, 154, 0.08)";
+
+  }
+
+
+  setPreviewStatus(
+    "Stitch data generated"
+  );
 
 
   console.info(
-    "Validated embroidery requirements:",
-    appState.design
+    "Embroidery design result:",
+    result
   );
+
+
+  if (generateButton) {
+
+    setTimeout(
+      () => {
+
+        generateButton.disabled =
+          false;
+
+      },
+      300
+    );
+
+  }
 
 }
 
 
 /* =========================================================
-   13. PREVIEW STATUS
+   15. ENGINE STATISTICS
    ========================================================= */
 
-function setPreviewStatus(message) {
+function updateEngineStatistics(
+  stats
+) {
+
+  if (!stats) {
+    return;
+  }
+
+
+  if (stitchCount) {
+
+    stitchCount.textContent =
+      Number(
+        stats.totalStitches || 0
+      ).toLocaleString();
+
+  }
+
+
+  if (colorCount) {
+
+    colorCount.textContent =
+      String(
+        stats.colors || 0
+      );
+
+  }
+
+
+  if (estimatedTime) {
+
+    const minutes =
+      Number(
+        stats.estimatedTimeMinutes ||
+        0
+      );
+
+
+    if (minutes < 1) {
+
+      estimatedTime.textContent =
+        "< 1 min";
+
+    } else {
+
+      estimatedTime.textContent =
+        `${minutes.toFixed(1)} min`;
+
+    }
+
+  }
+
+
+  if (jumpCount) {
+
+    jumpCount.textContent =
+      Number(
+        stats.jumps || 0
+      ).toLocaleString();
+
+  }
+
+}
+
+
+/* =========================================================
+   16. STITCH PREVIEW
+   ========================================================= */
+
+function drawStitchPreview(
+  stitches
+) {
+
+  if (
+    !stitchCanvas ||
+    !Array.isArray(stitches) ||
+    stitches.length === 0
+  ) {
+
+    return;
+
+  }
+
+
+  const context =
+    stitchCanvas.getContext(
+      "2d"
+    );
+
+
+  if (!context) {
+    return;
+  }
+
+
+  /*
+   * Canvas dimensions are already prepared
+   * by updateCanvasSize().
+   */
+
+  const canvasWidth =
+    stitchCanvas.clientWidth;
+
+
+  const canvasHeight =
+    stitchCanvas.clientHeight;
+
+
+  if (
+    !canvasWidth ||
+    !canvasHeight
+  ) {
+
+    return;
+
+  }
+
+
+  context.clearRect(
+    0,
+    0,
+    canvasWidth,
+    canvasHeight
+  );
+
+
+  /*
+   * Ignore machine commands while drawing
+   * the visual stitch path.
+   */
+
+  const visibleStitches =
+    stitches.filter(
+      (stitch) =>
+
+        stitch.type !==
+          "jump" &&
+
+        stitch.type !==
+          "trim" &&
+
+        stitch.type !==
+          "color_change"
+
+    );
+
+
+  if (
+    visibleStitches.length === 0
+  ) {
+
+    return;
+
+  }
+
+
+  const xs =
+    visibleStitches.map(
+      (stitch) => stitch.x
+    );
+
+
+  const ys =
+    visibleStitches.map(
+      (stitch) => stitch.y
+    );
+
+
+  const minX =
+    Math.min(...xs);
+
+
+  const maxX =
+    Math.max(...xs);
+
+
+  const minY =
+    Math.min(...ys);
+
+
+  const maxY =
+    Math.max(...ys);
+
+
+  const designWidth =
+    Math.max(
+      maxX - minX,
+      0.001
+    );
+
+
+  const designHeight =
+    Math.max(
+      maxY - minY,
+      0.001
+    );
+
+
+  const padding = 30;
+
+
+  const scaleX =
+    (
+      canvasWidth -
+      padding * 2
+    ) /
+    designWidth;
+
+
+  const scaleY =
+    (
+      canvasHeight -
+      padding * 2
+    ) /
+    designHeight;
+
+
+  const scale =
+    Math.min(
+      scaleX,
+      scaleY
+    );
+
+
+  function mapX(x) {
+
+    return (
+
+      (x - minX) *
+        scale +
+
+      padding +
+
+      (
+        canvasWidth -
+        padding * 2 -
+        designWidth * scale
+      ) / 2
+
+    );
+
+  }
+
+
+  function mapY(y) {
+
+    return (
+
+      (y - minY) *
+        scale +
+
+      padding +
+
+      (
+        canvasHeight -
+        padding * 2 -
+        designHeight * scale
+      ) / 2
+
+    );
+
+  }
+
+
+  /*
+   * Main stitch path.
+   */
+
+  context.beginPath();
+
+
+  let started =
+    false;
+
+
+  visibleStitches.forEach(
+    (stitch) => {
+
+      const x =
+        mapX(stitch.x);
+
+
+      const y =
+        mapY(stitch.y);
+
+
+      if (!started) {
+
+        context.moveTo(
+          x,
+          y
+        );
+
+
+        started = true;
+
+      } else {
+
+        context.lineTo(
+          x,
+          y
+        );
+
+      }
+
+    }
+  );
+
+
+  context.lineWidth =
+    1.5;
+
+
+  context.lineCap =
+    "round";
+
+
+  context.lineJoin =
+    "round";
+
+
+  context.strokeStyle =
+    "#C7FF2F";
+
+
+  context.stroke();
+
+
+  /*
+   * Small stitch points.
+   */
+
+  const pointStep =
+    Math.max(
+      1,
+      Math.floor(
+        visibleStitches.length /
+        250
+      )
+    );
+
+
+  context.fillStyle =
+    "#65E69A";
+
+
+  for (
+    let i = 0;
+    i < visibleStitches.length;
+    i += pointStep
+  ) {
+
+    const stitch =
+      visibleStitches[i];
+
+
+    const x =
+      mapX(stitch.x);
+
+
+    const y =
+      mapY(stitch.y);
+
+
+    context.beginPath();
+
+
+    context.arc(
+      x,
+      y,
+      1.2,
+      0,
+      Math.PI * 2
+    );
+
+
+    context.fill();
+
+  }
+
+}
+
+
+/* =========================================================
+   17. ENGINE VALIDATION DISPLAY
+   ========================================================= */
+
+function displayEngineValidation(
+  validation
+) {
+
+  if (!validation) {
+    return;
+  }
+
+
+  const messages = [];
+
+
+  if (
+    validation.size &&
+    Array.isArray(
+      validation.size.errors
+    )
+  ) {
+
+    messages.push(
+      ...validation.size.errors
+    );
+
+  }
+
+
+  if (
+    validation.stitches &&
+    Array.isArray(
+      validation.stitches.errors
+    )
+  ) {
+
+    messages.push(
+      ...validation.stitches.errors
+    );
+
+  }
+
+
+  if (
+    messages.length > 0
+  ) {
+
+    setPreviewStatus(
+      messages[0]
+    );
+
+
+    console.warn(
+      "Engine validation:",
+      messages
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   18. PREVIEW STATUS
+   ========================================================= */
+
+function setPreviewStatus(
+  message
+) {
 
   if (!previewStatus) {
     return;
   }
+
 
   previewStatus.textContent =
     message;
@@ -738,7 +1697,9 @@ function setPreviewStatus(message) {
 
   if (
     message ===
-    "Requirements validated"
+      "Stitch data generated" ||
+    message ===
+      "Requirements validated"
   ) {
 
     previewStatus.style.color =
@@ -755,7 +1716,7 @@ function setPreviewStatus(message) {
 
 
 /* =========================================================
-   14. VALIDATION MESSAGE
+   19. VALIDATION MESSAGE
    ========================================================= */
 
 function showValidationMessage() {
@@ -763,13 +1724,16 @@ function showValidationMessage() {
   if (
     !appState.validation.messages.length
   ) {
+
     return;
+
   }
 
 
   const message =
     appState.validation.messages
       .join(" ");
+
 
   console.warn(
     "Embroidery validation:",
@@ -785,47 +1749,47 @@ function showValidationMessage() {
 
 
 /* =========================================================
-   15. STATISTICS PLACEHOLDER
+   20. STATISTICS PLACEHOLDER
    ========================================================= */
 
 function updateStatisticsPlaceholder() {
 
-  /*
-   These values remain intentionally empty.
-
-   We will NOT invent stitch counts.
-
-   Once stitch-engine.js exists,
-   it will calculate:
-
-   - stitch count
-   - colors
-   - estimated machine time
-   - jumps / trims
-  */
-
-
   if (stitchCount) {
-    stitchCount.textContent = "—";
+
+    stitchCount.textContent =
+      "—";
+
   }
+
 
   if (colorCount) {
-    colorCount.textContent = "—";
+
+    colorCount.textContent =
+      "—";
+
   }
+
 
   if (estimatedTime) {
-    estimatedTime.textContent = "—";
+
+    estimatedTime.textContent =
+      "—";
+
   }
 
+
   if (jumpCount) {
-    jumpCount.textContent = "—";
+
+    jumpCount.textContent =
+      "—";
+
   }
 
 }
 
 
 /* =========================================================
-   16. REFERENCE IMAGE
+   21. REFERENCE IMAGE
    ========================================================= */
 
 function bindReferenceUpload() {
@@ -853,18 +1817,30 @@ function bindReferenceUpload() {
       }
 
 
+      /*
+       * Only metadata is stored for now.
+       *
+       * Later this image will be sent to
+       * the AI vision/geometry backend.
+       */
+
       appState.design.referenceImage = {
 
-        name: file.name,
+        name:
+          file.name,
 
-        type: file.type,
+        type:
+          file.type,
 
-        size: file.size
+        size:
+          file.size
 
       };
 
 
-      updateUploadBox(file);
+      updateUploadBox(
+        file
+      );
 
     }
   );
@@ -872,7 +1848,9 @@ function bindReferenceUpload() {
 }
 
 
-function updateUploadBox(file) {
+function updateUploadBox(
+  file
+) {
 
   const uploadBox =
     document.querySelector(
@@ -886,10 +1864,15 @@ function updateUploadBox(file) {
 
 
   const strong =
-    uploadBox.querySelector("strong");
+    uploadBox.querySelector(
+      "strong"
+    );
+
 
   const small =
-    uploadBox.querySelector("small");
+    uploadBox.querySelector(
+      "small"
+    );
 
 
   if (strong) {
@@ -903,23 +1886,32 @@ function updateUploadBox(file) {
   if (small) {
 
     small.textContent =
-      formatFileSize(file.size);
+      formatFileSize(
+        file.size
+      );
 
   }
 
 }
 
 
-function formatFileSize(bytes) {
+function formatFileSize(
+  bytes
+) {
 
-  if (bytes < 1024) {
+  if (
+    bytes < 1024
+  ) {
 
     return `${bytes} B`;
 
   }
 
 
-  if (bytes < 1024 * 1024) {
+  if (
+    bytes <
+    1024 * 1024
+  ) {
 
     return `${(
       bytes / 1024
@@ -937,7 +1929,7 @@ function formatFileSize(bytes) {
 
 
 /* =========================================================
-   17. CANVAS PREPARATION
+   22. CANVAS PREPARATION
    ========================================================= */
 
 function updateCanvasSize() {
@@ -959,39 +1951,52 @@ function updateCanvasSize() {
   const width =
     container.clientWidth;
 
+
   const height =
     container.clientHeight;
 
 
-  if (!width || !height) {
+  if (
+    !width ||
+    !height
+  ) {
+
     return;
+
   }
 
 
   const devicePixelRatio =
-    window.devicePixelRatio || 1;
+    window.devicePixelRatio ||
+    1;
 
 
   stitchCanvas.width =
     Math.floor(
-      width * devicePixelRatio
+      width *
+      devicePixelRatio
     );
+
 
   stitchCanvas.height =
     Math.floor(
-      height * devicePixelRatio
+      height *
+      devicePixelRatio
     );
 
 
   stitchCanvas.style.width =
     `${width}px`;
 
+
   stitchCanvas.style.height =
     `${height}px`;
 
 
   const context =
-    stitchCanvas.getContext("2d");
+    stitchCanvas.getContext(
+      "2d"
+    );
 
 
   if (context) {
@@ -1011,7 +2016,7 @@ function updateCanvasSize() {
 
 
 /* =========================================================
-   18. PREVIEW CONTROLS
+   23. PREVIEW CONTROLS
    ========================================================= */
 
 function bindPreviewControls() {
@@ -1023,6 +2028,17 @@ function bindPreviewControls() {
       () => {
 
         updateCanvasSize();
+
+
+        if (
+          appState.stitches.length
+        ) {
+
+          drawStitchPreview(
+            appState.stitches
+          );
+
+        }
 
       }
     );
@@ -1042,7 +2058,22 @@ function bindPreviewControls() {
 
   window.addEventListener(
     "resize",
-    updateCanvasSize
+    () => {
+
+      updateCanvasSize();
+
+
+      if (
+        appState.stitches.length
+      ) {
+
+        drawStitchPreview(
+          appState.stitches
+        );
+
+      }
+
+    }
   );
 
 }
@@ -1055,6 +2086,18 @@ function resetPreview() {
   updatePreviewInformation();
 
   updateCanvasSize();
+
+
+  appState.generatedDesign =
+    null;
+
+
+  appState.stitches =
+    [];
+
+
+  appState.statistics =
+    null;
 
 
   if (previewPlaceholder) {
@@ -1092,8 +2135,10 @@ function resetPreview() {
     qualityBadge.textContent =
       "Waiting";
 
+
     qualityBadge.style.color =
       "var(--warning)";
+
 
     qualityBadge.style.background =
       "rgba(255, 200, 87, 0.08)";
@@ -1107,7 +2152,7 @@ function resetPreview() {
 
 
 /* =========================================================
-   19. CANVAS CLEAR
+   24. CANVAS CLEAR
    ========================================================= */
 
 function clearCanvas() {
@@ -1118,7 +2163,9 @@ function clearCanvas() {
 
 
   const context =
-    stitchCanvas.getContext("2d");
+    stitchCanvas.getContext(
+      "2d"
+    );
 
 
   if (!context) {
@@ -1137,7 +2184,7 @@ function clearCanvas() {
 
 
 /* =========================================================
-   20. SETTINGS
+   25. SETTINGS
    ========================================================= */
 
 function bindSettings() {
@@ -1150,6 +2197,7 @@ function bindSettings() {
 
         appState.settings.theme =
           themeSetting.value;
+
 
         applyTheme();
 
@@ -1170,6 +2218,7 @@ function bindSettings() {
         appState.settings.defaultUnit =
           defaultUnit.value;
 
+
         if (
           sizeUnit &&
           !designHasMeaningfulUnit()
@@ -1178,11 +2227,13 @@ function bindSettings() {
           sizeUnit.value =
             defaultUnit.value;
 
+
           updateDesignState();
 
           updatePreviewInformation();
 
         }
+
 
         saveSettings();
 
@@ -1201,6 +2252,7 @@ function bindSettings() {
         appState.settings.autoValidation =
           autoValidation.checked;
 
+
         saveSettings();
 
       }
@@ -1212,7 +2264,7 @@ function bindSettings() {
 
 
 /* =========================================================
-   21. THEME
+   26. THEME
    ========================================================= */
 
 function applyTheme() {
@@ -1248,19 +2300,30 @@ function applyTheme() {
 function designHasMeaningfulUnit() {
 
   return (
+
     designWidth &&
+
     designHeight &&
+
     (
-      Number(designWidth.value) !== 4 ||
-      Number(designHeight.value) !== 4
+
+      Number(
+        designWidth.value
+      ) !== 4 ||
+
+      Number(
+        designHeight.value
+      ) !== 4
+
     )
+
   );
 
 }
 
 
 /* =========================================================
-   22. LOCAL STORAGE
+   27. LOCAL STORAGE
    ========================================================= */
 
 const SETTINGS_KEY =
@@ -1273,9 +2336,11 @@ function saveSettings() {
 
     localStorage.setItem(
       SETTINGS_KEY,
+
       JSON.stringify(
         appState.settings
       )
+
     );
 
   } catch (error) {
@@ -1310,7 +2375,9 @@ function loadSettings() {
 
 
     const parsed =
-      JSON.parse(saved);
+      JSON.parse(
+        saved
+      );
 
 
     appState.settings = {
@@ -1355,6 +2422,7 @@ function loadSettings() {
       error
     );
 
+
     applyTheme();
 
   }
@@ -1363,54 +2431,83 @@ function loadSettings() {
 
 
 /* =========================================================
-   23. NUMBER FORMAT
+   28. NUMBER FORMAT
    ========================================================= */
 
-function formatNumber(value) {
+function formatNumber(
+  value
+) {
 
-  if (!Number.isFinite(value)) {
+  if (
+    !Number.isFinite(value)
+  ) {
+
     return "—";
+
   }
 
 
   return Number.isInteger(value)
+
     ? String(value)
+
     : value.toFixed(2);
 
 }
 
 
 /* =========================================================
-   24. EXPORT PROTECTION
+   29. EXPORT PROTECTION
    ========================================================= */
 
-exportButtons.forEach((button) => {
+exportButtons.forEach(
+  (button) => {
 
-  button.addEventListener(
-    "click",
-    () => {
+    button.addEventListener(
+      "click",
+      () => {
 
-      /*
-       Export remains locked until the
-       real embroidery encoder exists.
-      */
+        /*
+         * Real export is intentionally
+         * locked until the production
+         * embroidery encoder is implemented.
+         */
 
-      if (button.disabled) {
+        if (button.disabled) {
 
-        console.info(
-          `${button.dataset.format} export is not available yet.`
-        );
+          console.info(
+            `${button.dataset.format} export is not available yet.`
+          );
+
+
+          setPreviewStatus(
+            "Export engine is not available yet"
+          );
+
+
+          return;
+
+        }
+
+
+        /*
+         * Future:
+         *
+         * DST encoder
+         * PES encoder
+         * EXP encoder
+         * etc.
+         */
 
       }
+    );
 
-    }
-  );
-
-});
+  }
+);
 
 
 /* =========================================================
-   25. GLOBAL APP START
+   30. GLOBAL APP START
    ========================================================= */
 
 initializeApp();
