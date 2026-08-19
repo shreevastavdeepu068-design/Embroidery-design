@@ -537,25 +537,21 @@ function handleDesignInput() {
 
 function updateDesignState() {
 
+  // Prefer valueAsNumber when available so empty strings
+  // don't coerce to 0 unexpectedly.
   if (designWidth) {
-
-    appState.design.width =
-      Number(
-        designWidth.value
-      );
-
+    const n = (typeof designWidth.valueAsNumber === 'number' && !Number.isNaN(designWidth.valueAsNumber))
+      ? designWidth.valueAsNumber
+      : parseFloat(designWidth.value);
+    appState.design.width = Number.isFinite(n) ? n : 0;
   }
-
 
   if (designHeight) {
-
-    appState.design.height =
-      Number(
-        designHeight.value
-      );
-
+    const n = (typeof designHeight.valueAsNumber === 'number' && !Number.isNaN(designHeight.valueAsNumber))
+      ? designHeight.valueAsNumber
+      : parseFloat(designHeight.value);
+    appState.design.height = Number.isFinite(n) ? n : 0;
   }
-
 
   if (sizeUnit) {
 
@@ -950,7 +946,8 @@ function bindGenerateButton() {
    14. GENERATE DESIGN
    ========================================================= */
 
-function handleGenerateRequest() {
+// Make this async so we can support engines that return Promises
+async function handleGenerateRequest() {
 
   updateDesignState();
 
@@ -1019,7 +1016,7 @@ function handleGenerateRequest() {
 
   try {
 
-    result =
+    const maybePromise =
       EmbroideryStitchEngine.build({
 
         width:
@@ -1047,6 +1044,13 @@ function handleGenerateRequest() {
           appState.design.description
 
       });
+
+    // Support both synchronous and promise-based engines
+    if (maybePromise && typeof maybePromise.then === 'function') {
+      result = await maybePromise;
+    } else {
+      result = maybePromise;
+    }
 
   } catch (error) {
 
