@@ -24,6 +24,7 @@
       const colorsOpt = options.colors || "auto";
       const pref = options.stitchPreference || "auto";
       const description = (options.description || "").toLowerCase();
+      const density = options.density || null; // null = auto (use defaults)
 
       // Unit helpers
       const toInches = (v) => (unit === "mm" ? v / 25.4 : v);
@@ -149,8 +150,13 @@
       }
 
       // Convert preferred spacing depending on fabric and stitch type
-      function stitchSpacingForType(type) {
-        // inches
+      function stitchSpacingForType(type, customDensity = null) {
+        // If custom density provided, use it
+        if (customDensity !== null && Number.isFinite(customDensity) && customDensity > 0) {
+          return customDensity;
+        }
+        
+        // Otherwise use default spacing by type (inches)
         if (type === "running") return 0.05; // 0.05in (approx 1.27mm)
         if (type === "satin") return 0.06; // close satin spacing
         return 0.08; // fill stitch spacing
@@ -211,18 +217,18 @@
         emitGroup([circlePath(cx, cy, r * 0.5, 0.02)], 1);
       } else {
         // default shape: rectangle border + fill depending on mode
-        const outline = rectangleOutline(w, h, 0.06, stitchSpacingForType(mode));
+        const outline = rectangleOutline(w, h, 0.06, stitchSpacingForType(mode, density));
         emitGroup([outline], 0);
 
         if (mode === "running") {
           // add a second offset outline to simulate decorative running
-          const inner = rectangleOutline(w * 0.85, h * 0.85, 0.06 + Math.min(w, h) * 0.05, stitchSpacingForType(mode));
+          const inner = rectangleOutline(w * 0.85, h * 0.85, 0.06 + Math.min(w, h) * 0.05, stitchSpacingForType(mode, density));
           // shift inner to center
           const offsetInner = inner.map((p) => [p[0] + originX + (w - w * 0.85) / 2, p[1] + originY + (h - h * 0.85) / 2]);
           emitGroup([offsetInner], 1);
         } else if (mode === "satin") {
           // Generate satin runs across the shorter dimension
-          const spacing = stitchSpacingForType("satin");
+          const spacing = stitchSpacingForType("satin", density);
           const runs = [];
           const isHorizontal = w >= h;
           if (isHorizontal) {
@@ -248,7 +254,7 @@
           }
         } else {
           // fill stitch (zig-zag)
-          const spacing = stitchSpacingForType("fill");
+          const spacing = stitchSpacingForType("fill", density);
           const rows = rectFill(w, h, spacing);
           const runs = rows.map((r) => r.map((p) => [p[0] + originX, p[1] + originY]));
           emitGroup(runs, 1);
