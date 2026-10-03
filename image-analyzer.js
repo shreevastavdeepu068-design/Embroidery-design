@@ -7,6 +7,11 @@
    bounding box, and edge preview.
 
  This implementation is intentionally local and NOT an AI model.
+ 
+ Improvements:
+ - Better foreground mask generation to preserve connected components
+ - Improved color/alpha thresholds for better segmentation
+ - Post-processing to merge fragmented regions via proximity
 */
 
 (function (global) {
@@ -250,11 +255,130 @@
         b: Math.round(b / area),
         a: Math.round(a / area)
       };
-      regionSummaries.push({ id, boundingBox: { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 }, areaPx: area, meanColor, centroid: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 } });
+      regionSummaries.push({
+        id,
+        boundingBox: { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 },
+        areaPx: area,
+        meanColor,
+        centroid: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }
+      });
     });
     // Sort by area descending
     regionSummaries.sort((a, b) => b.areaPx - a.areaPx);
     return regionSummaries;
+  }
+
+  /*
+   Improved mask generation:
+   - Use lower alpha threshold to be more inclusive
+   - Use more lenient color difference threshold
+   - This preserves connectivity of continuous foreground objects
+  */
+  function createForegroundMask(imageData, width, height, bgColor, hasAlpha) {
+    const mask = new Uint8Array(width * height);
+    
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (x + y * width) * 4;
+        const r = imageData.data[i];
+        const g = imageData.data[i + 1];
+        const b = imageData.data[i + 2];
+        const a = imageData.data[i + 3];
+        
+        let foreground = false;
+        
+        if (hasAlpha) {
+          // Include pixels with any meaningful alpha (not fully transparent)
+          // Lower threshold to preserve connectivity
+          foreground = a > 8;
+        } else if (bgColor) {
+          // Use more lenient threshold for color-based detection
+          // This prevents splitting connected shapes at color boundaries
+          const dr = Math.abs(r - bgColor.r);
+          const dg = Math.abs(g - bgColor.g);
+          const db = Math.abs(b - bgColor.b);
+          const diff = (dr + dg + db) / 3;
+          // Increased threshold from 24 to 16 to be more permissive
+          foreground = diff > 16;
+        } else {
+          // fallback to luminance variance
+          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+          foreground = Math.abs(lum - 128) > 28;
+        }
+        
+        mask[x + y * width] = foreground ? 1 : 0;
+      }
+    }
+    
+    return mask;
+  }
+
+  /*
+   Post-process regions: merge small fragmented regions that are very close
+   to larger ones. This helps recover regions that were split by thresholding.
+  */
+  function mergeFragmentedRegions(regions, mergeDistancePx = 8) {
+    if (regions.length <= 1) return regions;
+    
+    // Sort by area descending (already done, but be explicit)
+    const sorted = [...regions].sort((a, b) => b.areaPx - a.areaPx);
+    const merged = [];
+    const absorbed = new Set();
+    
+    for (let i = 0; i < sorted.length; i++) {
+      if (absorbed.has(i)) continue;
+      
+      const region = sorted[i];
+      let mergedWith = false;
+      
+      // Check if this small region should merge with a larger one
+      if (region.areaPx < 100) {
+        // Small region - check proximity to all larger regions
+        for (let j = 0; j < i; j++) {
+          if (absorbed.has(j)) continue;
+          
+          const largerRegion = sorted[j];
+          const dx = region.centroid.x - largerRegion.centroid.x;
+          const dy = region.centroid.y - largerRegion.centroid.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < mergeDistancePx) {
+            // Merge this small region into the larger one
+            largerRegion.areaPx += region.areaPx;
+            largerRegion.boundingBox.x = Math.min(
+              largerRegion.boundingBox.x,
+              region.boundingBox.x
+            );
+            largerRegion.boundingBox.y = Math.min(
+              largerRegion.boundingBox.y,
+              region.boundingBox.y
+            );
+            largerRegion.boundingBox.w = Math.max(
+              largerRegion.boundingBox.x + largerRegion.boundingBox.w,
+              region.boundingBox.x + region.boundingBox.w
+            ) - largerRegion.boundingBox.x;
+            largerRegion.boundingBox.h = Math.max(
+              largerRegion.boundingBox.y + largerRegion.boundingBox.h,
+              region.boundingBox.y + region.boundingBox.h
+            ) - largerRegion.boundingBox.y;
+            
+            // Update centroid
+            largerRegion.centroid.x = (largerRegion.centroid.x + region.centroid.x) / 2;
+            largerRegion.centroid.y = (largerRegion.centroid.y + region.centroid.y) / 2;
+            
+            absorbed.add(i);
+            mergedWith = true;
+            break;
+          }
+        }
+      }
+      
+      if (!mergedWith) {
+        merged.push(region);
+      }
+    }
+    
+    return merged;
   }
 
   async function analyze(file, options = {}) {
@@ -319,7 +443,6 @@
         primarySample = getImageData(img);
       } else {
         primarySample = sampleDownscaleCanvas(img, Math.min(DOWN_SCALE, Math.max(width, height)));
-        // primarySample.imageData is where pixels are
       }
     } catch (err) {
       analysis.analysisStatus = 'failed';
@@ -345,11 +468,8 @@
       // ignore thumbnail errors
     }
 
-    // Dominant colors from the downscaled sample (use sampleImageData)
+    // Dominant colors from the downscaled sample
     try {
-      const sampleForColors = (
-        sampleImageData.data ? sampleImageData : sampleImageData
-      );
       const dominantColors = quantizeColors(sampleImageData, 8);
       analysis.dominantColors = dominantColors;
       analysis.colorPaletteCount = dominantColors.length;
@@ -378,46 +498,45 @@
       // ignore
     }
 
-    // Foreground mask heuristic: if alpha exists use alpha, otherwise compare to bgColor
+    // Foreground mask with improved connectivity preservation
     try {
       const maskSample = sampleDownscaleCanvas(img, Math.min(DOWN_SCALE, Math.max(width, height)));
       const { imageData, width: sw, height: sh } = maskSample;
-      const mask = new Uint8Array(sw * sh);
-      for (let y = 0; y < sh; y++) {
-        for (let x = 0; x < sw; x++) {
-          const i = (x + y * sw) * 4;
-          const r = imageData.data[i];
-          const g = imageData.data[i + 1];
-          const b = imageData.data[i + 2];
-          const a = imageData.data[i + 3];
-          let foreground = false;
-          if (analysis.hasAlpha) {
-            foreground = a > 16; // tiny threshold
-          } else if (bgColor) {
-            const dr = Math.abs(r - bgColor.r);
-            const dg = Math.abs(g - bgColor.g);
-            const db = Math.abs(b - bgColor.b);
-            const diff = (dr + dg + db) / 3;
-            foreground = diff > 24; // threshold to detect foreground from background
-          } else {
-            // fallback to luminance variance
-            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-            foreground = Math.abs(lum - 128) > 32;
-          }
-          mask[x + y * sw] = foreground ? 1 : 0;
-        }
-      }
+      
+      // Use improved mask generation
+      const mask = createForegroundMask(imageData, sw, sh, bgColor, analysis.hasAlpha);
+      
       // Connected components
-      const regions = computeRegionsFromMask(mask, sw, sh, imageData);
-      analysis.regions = regions.map((r) => ({ ...r, boundingBox: { x: Math.round(r.boundingBox.x * (width / sw)), y: Math.round(r.boundingBox.y * (height / sh)), w: Math.round(r.boundingBox.w * (width / sw)), h: Math.round(r.boundingBox.h * (height / sh)) } }));
+      let regions = computeRegionsFromMask(mask, sw, sh, imageData);
+      
+      // Post-process to merge fragmented regions
+      regions = mergeFragmentedRegions(regions, 6);
+      
+      // Scale regions back to original image coordinates
+      analysis.regions = regions.map((r) => ({
+        ...r,
+        boundingBox: {
+          x: Math.round(r.boundingBox.x * (width / sw)),
+          y: Math.round(r.boundingBox.y * (height / sh)),
+          w: Math.round(r.boundingBox.w * (width / sw)),
+          h: Math.round(r.boundingBox.h * (height / sh))
+        },
+        centroid: {
+          x: Math.round(r.centroid.x * (width / sw)),
+          y: Math.round(r.centroid.y * (height / sh))
+        }
+      }));
+      
       analysis.regionsCount = analysis.regions.length;
+      
       if (analysis.regions.length > 0) {
         // approximate bounding box of largest region
         const main = analysis.regions[0];
         analysis.boundingBox = main.boundingBox;
       }
     } catch (err) {
-      // ignore region errors
+      console.error('Region detection error:', err);
+      // ignore region errors, continue with empty regions
     }
 
     analysis.confidence = 0.7; // heuristic for now
@@ -425,6 +544,7 @@
     if (analysis.analysisStatus === 'empty') {
       analysis.errorMessage = 'Image appears empty or fully transparent.';
     }
+    
     return analysis;
   }
 
